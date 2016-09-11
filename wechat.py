@@ -50,7 +50,7 @@ def wechat_auth():
             		return reply
         	content = xml.find('Content').text
         	msgId = xml.find('MsgId').text
-        	if u'笑话' in content:
+            if u'笑话' in content:
                 r = requests.get('http://www.qiushibaike.com/text/')
                 tree = etree.HTML(r.text)
                 contentlist = tree.xpath('//div[contains(@id, "qiushi_tag_")]')
