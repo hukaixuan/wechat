@@ -3,6 +3,9 @@ from flask import Flask
 from flask import request, make_response
 import hashlib
 import xml.etree.ElementTree as ET
+import requests
+from random import randint
+from lxml import etree
 
 app = Flask(__name__)
 
@@ -47,22 +50,47 @@ def wechat_auth():
             		return reply
         	content = xml.find('Content').text
         	msgId = xml.find('MsgId').text
-        	if type(content).__name__ == "unicode":
-            		content = content[::-1]
-            		content = content.encode('UTF-8')
-        	elif type(content).__name__ == "str":
-            		print type(content).__name__
-            		content = content.decode('utf-8')
-            		content = content[::-1]
-        	reply = '''
-                	<xml>
-                	<ToUserName><![CDATA[%s]]></ToUserName>
-                	<FromUserName><![CDATA[%s]]></FromUserName>
-                	<CreateTime>%s</CreateTime>
-                	<MsgType><![CDATA[%s]]></MsgType>
-                	<Content><![CDATA[%s]]></Content>
-                	</xml>
-                	''' % (fromUserName, toUserName, createTime, msgType, content)
-        	return reply
+        	if u'笑话' in content:
+                r = requests.get('http://www.qiushibaike.com/text/')
+                tree = etree.HTML(r.text)
+                contentlist = tree.xpath('//div[contains(@id, "qiushi_tag_")]')
+                jokes = []
+
+                for i in contentlist:
+                    content = i.xpath('div[@class="content"]/text()')
+                    contentstring = ''.join(content)
+                    contentstring = contentstring.strip('\n')
+                    jokes.append(contentstring)
+
+
+                joke =  jokes[randint(0,len(jokes))]
+                reply = '''
+                        <xml>
+                        <ToUserName><![CDATA[%s]]></ToUserName>
+                        <FromUserName><![CDATA[%s]]></FromUserName>
+                        <CreateTime>%s</CreateTime>
+                        <MsgType><![CDATA[%s]]></MsgType>
+                        <Content><![CDATA[%s]]></Content>
+                        </xml>
+                        ''' % (fromUserName, toUserName, createTime, msgType, joke)
+                return reply
+            else:
+                if type(content).__name__ == "unicode":
+                    content = content[::-1]
+                    content = content.encode('UTF-8')
+                elif type(content).__name__ == "str":
+                    print type(content).__name__
+                    content = content.decode('utf-8')
+                    content = content[::-1]
+                reply = '''
+                        <xml>
+                        <ToUserName><![CDATA[%s]]></ToUserName>
+                        <FromUserName><![CDATA[%s]]></FromUserName>
+                        <CreateTime>%s</CreateTime>
+                        <MsgType><![CDATA[%s]]></MsgType>
+                        <Content><![CDATA[%s]]></Content>
+                        </xml>
+                        ''' % (fromUserName, toUserName, createTime, msgType, content)
+                return reply
 if __name__ == "__main__":
 	app.run(host='0.0.0.0', port=80)
